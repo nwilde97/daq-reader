@@ -40,11 +40,11 @@ struct BUTTON_DATA {
 static void _cb(int gpio, int level, uint32_t tick, void *user){
     struct BUTTON_DATA *data;
     data = user;
-	if(level == 1 && data->lastEvent + CLOCKS_PER_SEC * 1 > clock()){
+	if(level == 1 && data->lastEvent + (double)CLOCKS_PER_SEC * 1 > (double)clock()){
 	    data->lastEvent = clock();
   	    printf("Button Pressed\n");
 	} else if(level == 1){
-	printf("Button Pressed %d %d %d\n", data->lastEvent , CLOCKS_PER_SEC , clock());
+	printf("Button Pressed %d %d %d\n", data->lastEvent , (double)CLOCKS_PER_SEC , (double)clock());
 	}
 }
 
