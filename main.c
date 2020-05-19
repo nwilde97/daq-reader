@@ -46,7 +46,7 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
 int setupButtonListener( ) {
 	if (gpioInitialise() < 0) return 1;
 	gpioSetMode(4, PI_INPUT);
-	gpioSetWatchdog(4, 10000);
+	gpioSetWatchdog(4, 1000);
   gpioSetAlertFuncEx(4, _cb, 0);
 }
 
@@ -143,7 +143,7 @@ int main( int argc, char **argv ) {
 	* Initialize variables used in scan loop
 	*/
     unsigned short volts[ MAX_CHANNELS ];
-    int FREQUENCY = 1000 * 1 / HERTZ;
+    int FREQUENCY = 1000000 * 1 / HERTZ;
     unsigned long result;
 	int fileIdx = 0; /* Index to be used in filenames */
 	int scansWritten = 0; /* Used to track how many scans have been written to a file */
@@ -180,7 +180,8 @@ int main( int argc, char **argv ) {
 		/*
 		* Wait a certain amount of time defined by HERTZ
 		*/
-		msleep(FREQUENCY);
+//		msleep(FREQUENCY);
+		gpioDelay(FREQUENCY);
     }
 
     /* End Scanning loop */
