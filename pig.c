@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 struct BUTTON_DATA {
-	double lastEvent;
+	uint32_t lastEvent;
 };
 
 static void _cb(int gpio, int level, uint32_t tick, void *user){
@@ -11,7 +11,7 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
     double INTERVAL = 1000;
     data = user;
 	if(level == 1 && &data->lastEvent + INTERVAL < tick ){
-	    data->lastEvent = now;
+	    data->lastEvent = tick;
   	    printf("Button Pressed %d %d %d\n", &data->lastEvent , INTERVAL , tick);
 	} else if(level == 1){
 	printf("Button Pressed %d %d %d\n", &data->lastEvent , INTERVAL , tick);
