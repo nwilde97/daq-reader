@@ -7,44 +7,22 @@
 #include <pigpio.h>
 #include <stdlib.h>
 
-    static const int MAX_CHANNELS = 128;
-    static const int NUM_CHANNELS = 64;
-    static const int HERTZ = 100;
-    static const int SECONDS_PER_FILE = 10;
-
-int msleep(long msec)
-{
-    struct timespec ts;
-    int res;
-
-    if (msec < 0)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-
-    ts.tv_sec = msec / 1000;
-    ts.tv_nsec = (msec % 1000) * 1000000;
-
-    do {
-        res = nanosleep(&ts, &ts);
-    } while (res && errno == EINTR);
-
-    return res;
-}
+static const int MAX_CHANNELS = 128;
+static const int NUM_CHANNELS = 64;
+static const int HERTZ = 100;
+static const int SECONDS_PER_FILE = 10;
+static const uint32_t INTERVAL = 500000; /* Half second timeout for button events*/
 
 struct BUTTON_DATA {
-	double lastEvent;
+	uint32_t lastEvent;
 };
 
 static void _cb(int gpio, int level, uint32_t tick, void *user){
     struct BUTTON_DATA *data;
     data = user;
-	if(level == 1 && data->lastEvent + (double)CLOCKS_PER_SEC * 1 > (double)clock()){
-	    data->lastEvent = clock();
+	if(level == 1 && data->lastEvent + INTERVAL < tick ){
+	    data->lastEvent = tick;
   	    printf("Button Pressed\n");
-	} else if(level == 1){
-	printf("Button Pressed %d %d %d\n", data->lastEvent , (double)CLOCKS_PER_SEC , (double)clock());
 	}
 }
 
