@@ -184,6 +184,10 @@ int main( int argc, char **argv ) {
 
     /* End Scanning loop */
 
+    if(!deviceIndex){
+        printf("No DAQ Device found\n");
+    }
+
 /*
  * MUST call AIOUSB_Exit() before program exits,
  * but only if AIOUSB_Init() succeeded
