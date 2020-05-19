@@ -4,6 +4,8 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <pigpio.h>
+#include <stdlib.h>
 
     static const int MAX_CHANNELS = 128;
     static const int NUM_CHANNELS = 64;
@@ -29,6 +31,23 @@ int msleep(long msec)
     } while (res && errno == EINTR);
 
     return res;
+}
+
+struct BUTTON_DATA {
+	int pressed;
+};
+
+static void _cb(int gpio, int level, uint32_t tick, void *user){
+	if(level == 1){
+  	    printf("Button Pressed\n");
+	}
+}
+
+int setupButtonListener( ) {
+	if (gpioInitialise() < 0) return 1;
+	gpioSetMode(4, PI_INPUT);
+	gpioSetWatchdog(4, 10000);
+  gpioSetAlertFuncEx(4, _cb, 0);
 }
 
 unsigned long setupDAQ() {
@@ -117,6 +136,7 @@ unsigned long setupDAQ() {
 }
 
 int main( int argc, char **argv ) {
+    setupButtonListener();
 	unsigned long deviceIndex = setupDAQ();
 
 	/*
