@@ -49,7 +49,7 @@ int setupButtonListener( ) {
 	     return 1;
 	}
 	gpioSetMode(4, PI_INPUT);
-	gpioSetWatchdog(4, 1000);
+	gpioSetWatchdog(4, 10000);
   gpioSetAlertFuncEx(4, _cb, 0);
 }
 
@@ -156,35 +156,42 @@ int main( int argc, char **argv ) {
 	/* End Initialization */
 
 	/* Begin scanning loop */
+	clock_t tick = clock();
+	double nextTick = (double)tick + (double)CLOCKS_PER_SEC / (double)HERTZ;
 	while(1){
-		if(scansWritten == 0){
-			// Open a new file
-			snprintf(filename, 32, "/home/pi/ggc/in/%d.dat", fileIdx);
-            printf("Writing to file %s\n", filename);
-			fp = fopen(filename, "w");
-		}
-		result = ADC_GetScan( deviceIndex, volts );
-		if( result == AIOUSB_SUCCESS ) {
-			fwrite(&volts, 2, NUM_CHANNELS, fp);
-			++scansWritten;
-		} else {
-			printf( "Error '%s' performing A/D channel scan\n", AIOUSB_GetResultCodeAsString( result ) );
-		}
+	    tick = clock();
+	    if((double)tick >= nextTick){
+	        nextTick = nextTick + (double)CLOCKS_PER_SEC / (double)HERTZ;
+            if(scansWritten == 0){
+                // Open a new file
+                snprintf(filename, 32, "/home/pi/ggc/in/%d.dat", fileIdx);
+                printf("Writing to file %s\n", filename);
+                fp = fopen(filename, "w");
+            }
+            result = ADC_GetScan( deviceIndex, volts );
+            if( result == AIOUSB_SUCCESS ) {
+                fwrite(&volts, 2, NUM_CHANNELS, fp);
+                ++scansWritten;
+            } else {
+                printf( "Error '%s' performing A/D channel scan\n", AIOUSB_GetResultCodeAsString( result ) );
+            }
 
-		/*
-		* If we've reached the capacity for the file, then close it
-		*/
-		if(scansWritten >= HERTZ * SECONDS_PER_FILE){
-			scansWritten = 0;
-			++fileIdx;
-			fclose(fp);
-		}
+            /*
+            * If we've reached the capacity for the file, then close it
+            */
+            if(scansWritten >= HERTZ * SECONDS_PER_FILE){
+                scansWritten = 0;
+                ++fileIdx;
+                fclose(fp);
+            }
 
+	    }
 		/*
 		* Wait a certain amount of time defined by HERTZ
 		*/
 //		msleep(FREQUENCY);
-		gpioDelay(FREQUENCY);
+//		gpioDelay(FREQUENCY);
+        gpioDelay(1); /* Delay give the button time to respond if needed */
     }
 
     /* End Scanning loop */
