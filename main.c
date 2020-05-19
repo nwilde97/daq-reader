@@ -153,7 +153,7 @@ int main( int argc, char **argv ) {
 	/* End Initialization */
 
 	/* Begin scanning loop */
-	while(deviceIndex){
+	while(deviceIndex > 0){
 		if(scansWritten == 0){
 			// Open a new file
 			snprintf(filename, 32, "/home/pi/ggc/in/%d.dat", fileIdx);
@@ -184,7 +184,7 @@ int main( int argc, char **argv ) {
 
     /* End Scanning loop */
 
-    if(!deviceIndex){
+    if(deviceIndex < 1){
         printf("No DAQ Device found\n");
     }
 
