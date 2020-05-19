@@ -5,8 +5,6 @@
 #include <time.h>
 #include <errno.h>
 
-//using namespace AIOUSB;
-
 int msleep(long msec)
 {
     struct timespec ts;
@@ -49,14 +47,6 @@ int main( int argc, char **argv ) {
     int hertz;
     int frequency;
 
-    printf("USB-AI16-16A sample program version %s, %s\n"
-           "  This program demonstrates controlling a USB-AI16-16A device on\n"
-           "  the USB bus. For simplicity, it uses the first such device found\n"
-           "  on the bus.\n",
-           AIOUSB_GetVersion(),
-           AIOUSB_GetVersionDate()
-           );
-
     /*
      * MUST call AIOUSB_Init() before any meaningful AIOUSB functions;
      * AIOUSB_GetVersion() above is an exception
@@ -76,8 +66,6 @@ int main( int argc, char **argv ) {
     /*
      * at least one ACCES device detected, but we want one of a specific type
      */
-    AIOUSB_ListDevices(); /** print list of all devices found on the bus */
-
     while( deviceMask != 0 ) {
         if( ( deviceMask & 1 ) != 0 ) {
             // found a device, but is it the correct type?
@@ -104,14 +92,6 @@ int main( int argc, char **argv ) {
     }
 
     AIOUSB_Reset( deviceIndex );
-    result = GetDeviceSerialNumber( deviceIndex, &serialNumber );
-
-    if( result == AIOUSB_SUCCESS )
-        printf( "Serial number of device at index %llx\n", (long long)serialNumber  );
-    else
-        printf( "Error '%s' getting serial number of device at index %lu\n",
-                AIOUSB_GetResultCodeAsString( result ),
-                deviceIndex );
 
     /*
      * demonstrate A/D configuration; there are two ways to configure the A/D;
@@ -121,33 +101,27 @@ int main( int argc, char **argv ) {
      * send the new settings to the device immediately; here we demonstrate the
      * ADConfigBlock technique; below we demonstrate use of the discrete functions
      */
-    AIOUSB_InitConfigBlock( &configBlock, deviceIndex, AIOUSB_FALSE );
+//    AIOUSB_InitConfigBlock( &configBlock, deviceIndex, AIOUSB_FALSE );
+//
+//    AIOUSB_SetAllGainCodeAndDiffMode( &configBlock, AD_GAIN_CODE_10V, AIOUSB_FALSE );
+//    ADCConfigBlockSetCalMode( &configBlock, AD_CAL_MODE_NORMAL );
+//    ADCConfigBlockSetTriggerMode( &configBlock, 0 );
+//    AIOUSB_SetScanRange( &configBlock, 0, 63 );
+//    ADCConfigBlockSetOversample( &configBlock, 0 );
+//
+//    result = ADC_SetConfig( deviceIndex, configBlock.registers, &configBlock.size );
+//
+//    if ( result != AIOUSB_SUCCESS ) {
+//        printf( "Error '%s' setting A/D configuration\n",
+//                AIOUSB_GetResultCodeAsString( result )
+//                );
+//        goto out_after_init;
+//    }
+//    printf( "A/D settings successfully configured\n" );
 
-    AIOUSB_SetAllGainCodeAndDiffMode( &configBlock, AD_GAIN_CODE_10V, AIOUSB_FALSE );
-    ADCConfigBlockSetCalMode( &configBlock, AD_CAL_MODE_NORMAL );
-    ADCConfigBlockSetTriggerMode( &configBlock, 0 );
-    AIOUSB_SetScanRange( &configBlock, 0, 63 );
-    ADCConfigBlockSetOversample( &configBlock, 0 );
-
-    // memset(configBlock.registers,0,20 );
-    // configBlock.registers[0x11] = 0x04;
-    // configBlock.registers[0x12] = 0xf0;
-    // configBlock.registers[0x13] = 0x0e;
-
-    result = ADC_SetConfig( deviceIndex, configBlock.registers, &configBlock.size );
-
-    if ( result != AIOUSB_SUCCESS ) {
-        printf( "Error '%s' setting A/D configuration\n",
-                AIOUSB_GetResultCodeAsString( result )
-                );
-        goto out_after_init;
-    }
-    printf( "A/D settings successfully configured\n" );
-
-    // calibration_type = strdup(":1TO1:");
+    /** automatic A/D calibration */
     calibration_type = strdup(":AUTO:");
-
-    result = ADC_SetCal( deviceIndex, calibration_type ); /**demonstrate automatic A/D calibration */
+    result = ADC_SetCal( deviceIndex, calibration_type );
 
     if( result == AIOUSB_SUCCESS ) {
         printf( "Automatic calibration completed successfully\n" );
@@ -159,41 +133,11 @@ int main( int argc, char **argv ) {
     }
 
     /*
-     * verify that A/D ground calibration is correct
-     */
-    ADC_SetOversample( deviceIndex, 0 );
-    ADC_SetScanLimits( deviceIndex, CAL_CHANNEL, CAL_CHANNEL );
-    ADC_ADMode( deviceIndex, 0 , AD_CAL_MODE_GROUND );
-
-    // result = ADC_GetScan( deviceIndex, counts );
-
-    // if( result == AIOUSB_SUCCESS )
-    //     printf( "Ground counts = %u (should be approx. 0)\n", counts[ CAL_CHANNEL ] );
-    // else
-    //     printf( "Error '%s' attempting to read ground counts\n",
-    //             AIOUSB_GetResultCodeAsString( result ) );
-
-
-
-
-    /*
-     * verify that A/D reference calibration is correct
-     */
-    // ADC_ADMode( deviceIndex, 0 , AD_CAL_MODE_REFERENCE );
-    // result = ADC_GetScan( deviceIndex, counts );
-    // if( result == AIOUSB_SUCCESS )
-    //     printf( "Reference counts = %u (should be approx. 65130)\n", counts[ CAL_CHANNEL ] );
-    // else
-    //     printf( "Error '%s' attempting to read reference counts\n",
-    //             AIOUSB_GetResultCodeAsString( result ) );
-    /*
-     * demonstrate scanning channels and measuring voltages
+     * Scan channels and measure voltages
      */
     for( int channel = 0; channel < NUM_CHANNELS; channel++ ){
         gainCodes[ channel ] = AD_GAIN_CODE_0_10V;
     }
-
-
     ADC_RangeAll( deviceIndex, gainCodes, AIOUSB_TRUE );
     ADC_SetOversample( deviceIndex, 10 );
     ADC_SetScanLimits( deviceIndex, 0, NUM_CHANNELS - 1 );
@@ -212,12 +156,12 @@ int main( int argc, char **argv ) {
         for(int j = 0; j < hertz * 10; ++j){
             result = ADC_GetScan( deviceIndex, volts );
             if( result == AIOUSB_SUCCESS ) {
-//                for( int channel = 0; channel < NUM_CHANNELS; channel++ ){
-//                    printf( "%u,", volts[ channel ] );
-//                }
+                for( int channel = 0; channel < NUM_CHANNELS; channel++ ){
+                    printf( "%u,", volts[ channel ] );
+                }
                 fwrite(&volts, 2, NUM_CHANNELS, fp);
                 byteCount += 2 * NUM_CHANNELS;
-//                printf("\n");
+                printf("\n");
             } else {
                 printf( "Error '%s' performing A/D channel scan\n", AIOUSB_GetResultCodeAsString( result ) );
             }
