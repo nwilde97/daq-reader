@@ -12,8 +12,8 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
     double now = (double)tick;
     double INTERVAL = (double)CLOCKS_PER_SEC;
 	if(level == 1 && data->lastEvent + INTERVAL < now ){
-	    data->lastEvent = clock();
-  	    printf("Button Pressed\n");
+	    data->lastEvent = now;
+  	    printf("Button Pressed %d %d %d\n", data->lastEvent , INTERVAL , now);
 	} else if(level == 1){
 	printf("Button Pressed %d %d %d\n", data->lastEvent , INTERVAL , now);
 	}
@@ -34,7 +34,7 @@ int setupButtonListener( ) {
 
 int main(){
 setupButtonListener( );
-printf("Listening");
+printf("Listening\n");
 while(1){
     gpioDelay(100);
 }
