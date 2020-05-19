@@ -10,11 +10,11 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
     struct BUTTON_DATA *data;
     double INTERVAL = 1000;
     data = user;
-	if(level == 1 && &data->lastEvent + INTERVAL < now ){
+	if(level == 1 && &data->lastEvent + INTERVAL < tick ){
 	    data->lastEvent = now;
-  	    printf("Button Pressed %d %d %d\n", &data->lastEvent , INTERVAL , now);
+  	    printf("Button Pressed %d %d %d\n", &data->lastEvent , INTERVAL , tick);
 	} else if(level == 1){
-	printf("Button Pressed %d %d %d\n", &data->lastEvent , INTERVAL , now);
+	printf("Button Pressed %d %d %d\n", &data->lastEvent , INTERVAL , tick);
 	}
 }
 
