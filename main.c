@@ -43,6 +43,8 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
 	if(level == 1 && data->lastEvent + CLOCKS_PER_SEC * 1 > clock()){
 	    data->lastEvent = clock();
   	    printf("Button Pressed\n");
+	} else if(level == 1){
+	printf("Button Pressed %d %d %d\n", data->lastEvent , CLOCKS_PER_SEC , clock());
 	}
 }
 
@@ -55,7 +57,7 @@ int setupButtonListener( ) {
 	     return 1;
 	}
 	gpioSetMode(4, PI_INPUT);
-//	gpioSetWatchdog(4, 10000);
+	gpioSetWatchdog(4, 100);
   gpioSetAlertFuncEx(4, _cb, data);
 }
 
