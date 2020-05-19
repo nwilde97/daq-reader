@@ -12,9 +12,9 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
     data = user;
 	if(level == 1 && data->lastEvent + INTERVAL < tick ){
 	    data->lastEvent = tick;
-  	    printf("Button Pressed %d %d %d\n", data->lastEvent , INTERVAL , tick);
+  	    printf("Button Pressed %zu %zu %zu\n", data->lastEvent , INTERVAL , tick);
 	} else if(level == 1){
-	printf("Button Pressed %d %d %d\n", data->lastEvent , INTERVAL , tick);
+	printf("Ignore event %zu %zu %zu\n", data->lastEvent , INTERVAL , tick);
 	}
 }
 
