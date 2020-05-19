@@ -70,13 +70,13 @@ unsigned long setupDAQ() {
     result = AIOUSB_Init();
     if ( result != AIOUSB_SUCCESS ) {
         printf( "AIOUSB_Init() error: %d\n" , (int)result);
-        return 0;
+        return -1;
     }
 
     deviceMask = GetDevices(); /** call GetDevices() to obtain "list" of devices found on the bus */
     if ( !deviceMask  ) {
         printf( "No ACCES devices found on USB bus\n" );
-        return 0;
+        return -1;
     }
 
     /*
@@ -104,7 +104,7 @@ unsigned long setupDAQ() {
 
     if (deviceFound < 1 ) {
         printf( "Failed to find USB-AI16-16A device\n" );
-        return 0;
+        return -1;
     }
 
     AIOUSB_Reset( deviceIndex );
@@ -119,7 +119,7 @@ unsigned long setupDAQ() {
         printf ("Automatic calibration not supported on this device\n");
     } else {
         printf( "Error '%s' performing automatic A/D calibration\n", AIOUSB_GetResultCodeAsString( result ) );
-        return 0;
+        return -1;
     }
 
     /*
@@ -153,7 +153,7 @@ int main( int argc, char **argv ) {
 	/* End Initialization */
 
 	/* Begin scanning loop */
-	while(deviceIndex > 0){
+	while(deviceIndex > -1){
 		if(scansWritten == 0){
 			// Open a new file
 			snprintf(filename, 32, "/home/pi/ggc/in/%d.dat", fileIdx);
@@ -183,10 +183,6 @@ int main( int argc, char **argv ) {
     }
 
     /* End Scanning loop */
-
-    if(deviceIndex < 1){
-        printf("No DAQ Device found\n");
-    }
 
 /*
  * MUST call AIOUSB_Exit() before program exits,
