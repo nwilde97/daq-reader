@@ -157,7 +157,7 @@ int main( int argc, char **argv ) {
 		if(scansWritten == 0){
 			// Open a new file
 			snprintf(filename, 32, "/home/pi/ggc/in/%d.dat", fileIdx);
-      printf("Writing to file %s\n", filename);
+            printf("Writing to file %s\n", filename);
 			fp = fopen(filename, "w");
 		}
 		result = ADC_GetScan( deviceIndex, volts );
@@ -173,6 +173,7 @@ int main( int argc, char **argv ) {
 		*/
 		if(scansWritten >= HERTZ * SECONDS_PER_FILE){
 			scansWritten = 0;
+			++fileIdx;
 			fclose(fp);
 		}
 
