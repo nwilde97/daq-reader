@@ -8,13 +8,13 @@ struct BUTTON_DATA {
 
 static void _cb(int gpio, int level, uint32_t tick, void *user){
     struct BUTTON_DATA *data;
-    double INTERVAL = 1000;
+    uint32_t INTERVAL = 1000;
     data = user;
-	if(level == 1 && &data->lastEvent + INTERVAL < tick ){
+	if(level == 1 && data->lastEvent + INTERVAL < tick ){
 	    data->lastEvent = tick;
-  	    printf("Button Pressed %d %d %d\n", &data->lastEvent , INTERVAL , tick);
+  	    printf("Button Pressed %d %d %d\n", data->lastEvent , INTERVAL , tick);
 	} else if(level == 1){
-	printf("Button Pressed %d %d %d\n", &data->lastEvent , INTERVAL , tick);
+	printf("Button Pressed %d %d %d\n", data->lastEvent , INTERVAL , tick);
 	}
 }
 
