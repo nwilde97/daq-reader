@@ -9,7 +9,8 @@ struct BUTTON_DATA {
 static void _cb(int gpio, int level, uint32_t tick, void *user){
 	struct BUTTON_DATA * data;
 	data = user;
-	if(level == 1){
+	if(level == 1 && data->pressed < 1){
+  	printf("Pressed\n");
 		data->pressed = 1;
 	}
 }
@@ -24,7 +25,8 @@ int main( int argc, char **argv ) {
   gpioSetAlertFuncEx(4, _cb, data);
   while(1){
   	if(data->pressed == 1){
-  		printf("Pressed %d", data->pressed);
+  		printf("Logging event %d\n", data->pressed);
+  		data->pressed = 0;
   	}
   }
   free(data);
