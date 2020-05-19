@@ -3,33 +3,39 @@
 #include <stdlib.h>
 
 struct BUTTON_DATA {
-	int pressed;
+	double lastEvent;
 };
 
 static void _cb(int gpio, int level, uint32_t tick, void *user){
-	struct BUTTON_DATA * data;
-	data = user;
-	if(level == 1 && data->pressed < 1){
-  	printf("Pressed\n");
-		data->pressed = 1;
+    struct BUTTON_DATA *data;
+    data = user;
+    double now = (double)tick;
+    double INTERVAL = (double)CLOCKS_PER_SEC;
+	if(level == 1 && data->lastEvent + INTERVAL < now ){
+	    data->lastEvent = clock();
+  	    printf("Button Pressed\n");
+	} else if(level == 1){
+	printf("Button Pressed %d %d %d\n", data->lastEvent , INTERVAL , now);
 	}
 }
 
-int main( int argc, char **argv ) {
-	struct BUTTON_DATA * data;
-	data = malloc(sizeof(data));
-	data->pressed = 0;
-	if (gpioInitialise() < 0) return 1;
+int setupButtonListener( ) {
+    struct BUTTON_DATA *data;
+    data = malloc(sizeof(data));
+    data->lastEvent = 0;
+	if (gpioInitialise() < 0){
+	    printf("Unable to initialize button");
+	     return 1;
+	}
 	gpioSetMode(4, PI_INPUT);
-	gpioSetWatchdog(4, 1000);
+	gpioSetWatchdog(4, 100);
   gpioSetAlertFuncEx(4, _cb, data);
-  while(1){
-  	if(data->pressed == 1){
-  		printf("Logging event %d\n", data->pressed);
-  		data->pressed = 0;
-  	}
-  }
-  free(data);
-  data = NULL;
-  gpioTerminate();
+}
+
+int main(){
+setupButtonListener( );
+printf("Listening");
+while(1){
+    gpioDelay(100);
+}
 }
