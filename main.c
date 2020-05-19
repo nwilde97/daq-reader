@@ -44,7 +44,10 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
 }
 
 int setupButtonListener( ) {
-	if (gpioInitialise() < 0) return 1;
+	if (gpioInitialise() < 0){
+	    printf("Unable to initialize button");
+	     return 1;
+	}
 	gpioSetMode(4, PI_INPUT);
 	gpioSetWatchdog(4, 1000);
   gpioSetAlertFuncEx(4, _cb, 0);
