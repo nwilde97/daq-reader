@@ -38,19 +38,22 @@ struct BUTTON_DATA {
 };
 
 static void _cb(int gpio, int level, uint32_t tick, void *user){
-	if(level == 1){
+    double *lastEvent;
+    lastEvent = user;
+	if(level == 1 && lastEvent + CLOCKS_PER_SEC * 1 > clock()){
   	    printf("Button Pressed\n");
 	}
 }
 
 int setupButtonListener( ) {
+    double lastEvent = 0;
 	if (gpioInitialise() < 0){
 	    printf("Unable to initialize button");
 	     return 1;
 	}
 	gpioSetMode(4, PI_INPUT);
 	gpioSetWatchdog(4, 10000);
-  gpioSetAlertFuncEx(4, _cb, 0);
+  gpioSetAlertFuncEx(4, _cb, &lastEvent);
 }
 
 unsigned long setupDAQ() {
