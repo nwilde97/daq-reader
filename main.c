@@ -164,7 +164,8 @@ int main( int argc, char **argv ) {
 	* Initialize variables used in scan loop
 	*/
     unsigned short volts[ MAX_CHANNELS ];
-    int FREQUENCY = 1000000 * 1 / HERTZ;
+    int APPROXIMATE_SCRIPT_TIME = 300;
+    int SLEEP_TIME = 1000000 * 1 / HERTZ - APPROXIMATE_SCRIPT_TIME;
     unsigned long result;
 	int fileIdx = 0; /* Index to be used in filenames */
 	int scansWritten = 0; /* Used to track how many scans have been written to a file */
@@ -209,7 +210,7 @@ int main( int argc, char **argv ) {
 		* Wait a certain amount of time defined by HERTZ
 		*/
 //		msleep(FREQUENCY);
-		gpioDelay(FREQUENCY);
+		gpioDelay(SLEEP_TIME);
 //        gpioDelay(1); /* Delay give the button time to respond if needed */
     }
 
