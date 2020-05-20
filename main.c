@@ -29,7 +29,7 @@ void getTimestampStr(char *stamp){
         s++;
         ms = 0;
     }
-    snprintf(stamp, 14, "%"PRIdMAX"%04ld", (intmax_t)s, ms);
+    snprintf(stamp, 14, "%"PRIdMAX"%04ld", (intmax_t)s, spec.tv_nsec);
 }
 
 struct BUTTON_DATA {
