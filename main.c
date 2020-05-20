@@ -208,7 +208,7 @@ int main( int argc, char **argv ) {
 		*/
 //        int APPROXIMATE_SCRIPT_TIME = 300;
 //        int SLEEP_TIME = 1000000 * 1 / HERTZ - APPROXIMATE_SCRIPT_TIME;
-        int SLEEP_TIME = 7000; /* This is approximate but results in about 100 hertz
+        int SLEEP_TIME = 7000; /* This is approximate but results in about 100 hertz */
 		gpioDelay(SLEEP_TIME);
     }
 
