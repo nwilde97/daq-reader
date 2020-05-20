@@ -189,7 +189,7 @@ int main( int argc, char **argv ) {
             if( result == AIOUSB_SUCCESS ) {
                 char stamp[14];
               	getTimestampStr(stamp);
-              	fwrite(stamp , 1 , sizeof(stamp) , fp );
+              	fwrite(stamp , 1, 13, fp);
                 fwrite(&volts, 2, NUM_CHANNELS, fp);
                 ++scansWritten;
             } else {
