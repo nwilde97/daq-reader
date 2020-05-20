@@ -29,8 +29,8 @@ void getTimestampStr(char *stamp){
         s++;
         ms = 0;
     }
-    snprintf(stamp, 14, "%"PRIdMAX"%04ld", (intmax_t)s, spec.tv_nsec);
-    printf("%04ld", spec.tv_nsec);
+    snprintf(stamp, 14, "%"PRIdMAX"%09ld", (intmax_t)s, spec.tv_nsec);
+//    printf("%04ld %"PRIdMAX"%09ld\n", spec.tv_nsec, (intmax_t)s, spec.tv_nsec);
 }
 
 struct BUTTON_DATA {
