@@ -6,12 +6,34 @@
 #include <errno.h>
 #include <pigpio.h>
 #include <stdlib.h>
+#include <inttypes.h>
+#include <math.h>
 
 static const int MAX_CHANNELS = 128;
 static const int NUM_CHANNELS = 64;
 static const int HERTZ = 100;
 static const int SECONDS_PER_FILE = 10;
 static const uint32_t INTERVAL = 500000; /* Half second timeout for button events*/
+
+
+void print_current_time_with_ms ()
+{
+    long            ms; // Milliseconds
+    time_t          s;  // Seconds
+    struct timespec spec;
+
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+    s  = spec.tv_sec;
+    ms = round(spec.tv_nsec / 1.0e6); // Convert nanoseconds to milliseconds
+    if (ms > 999) {
+        s++;
+        ms = 0;
+    }
+
+    printf("Current time: %"PRIdMAX".%03ld seconds since the Epoch\n",
+           (intmax_t)s, ms);
+}
 
 struct BUTTON_DATA {
 	uint32_t lastEvent;
@@ -23,6 +45,7 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
 	if(level == 1 && data->lastEvent + INTERVAL < tick ){
 	    data->lastEvent = tick;
   	    printf("Button Pressed\n");
+  	    print_current_time_with_ms();
 	}
 }
 
@@ -124,6 +147,15 @@ unsigned long setupDAQ() {
     return deviceIndex;
 }
 
+void getTimestamp(){
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    //do stuff
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+
+    uint64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+}
+
 int main( int argc, char **argv ) {
     setupButtonListener();
 	unsigned long deviceIndex = setupDAQ();
@@ -156,6 +188,7 @@ int main( int argc, char **argv ) {
             }
             result = ADC_GetScan( deviceIndex, volts );
             if( result == AIOUSB_SUCCESS ) {
+                fwrite()
                 fwrite(&volts, 2, NUM_CHANNELS, fp);
                 ++scansWritten;
             } else {
