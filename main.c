@@ -29,7 +29,7 @@ void getTimestampStr(char *stamp){
         s++;
         ms = 0;
     }
-    snprintf(stamp, 13, "%"PRIdMAX"%03ld", (intmax_t)s, ms);
+    snprintf(stamp, 13, "%"PRIdMAX"%04ld", (intmax_t)s, ms);
 }
 
 struct BUTTON_DATA {
@@ -187,6 +187,9 @@ int main( int argc, char **argv ) {
             }
             result = ADC_GetScan( deviceIndex, volts );
             if( result == AIOUSB_SUCCESS ) {
+                char stamp[14];
+              	getTimestampStr(stamp);
+              	fwrite(stamp , 1 , sizeof(stamp) , fp );
                 fwrite(&volts, 2, NUM_CHANNELS, fp);
                 ++scansWritten;
             } else {
