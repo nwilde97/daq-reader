@@ -188,7 +188,6 @@ int main( int argc, char **argv ) {
             }
             result = ADC_GetScan( deviceIndex, volts );
             if( result == AIOUSB_SUCCESS ) {
-                fwrite()
                 fwrite(&volts, 2, NUM_CHANNELS, fp);
                 ++scansWritten;
             } else {
