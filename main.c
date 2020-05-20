@@ -192,6 +192,10 @@ int main( int argc, char **argv ) {
               	fwrite(stamp , 1, 13, fp);
                 fwrite(&volts, 2, NUM_CHANNELS, fp);
                 ++scansWritten;
+                for( int channel = 0; channel < NUM_CHANNELS; channel++ ){
+                    printf( "%u,", volts[ channel ] );
+                }
+                printf("\n");
             } else {
                 printf( "Error '%s' performing A/D channel scan\n", AIOUSB_GetResultCodeAsString( result ) );
             }
