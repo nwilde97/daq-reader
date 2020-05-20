@@ -16,8 +16,7 @@ static const int SECONDS_PER_FILE = 10;
 static const uint32_t INTERVAL = 500000; /* Half second timeout for button events*/
 
 
-char[] getTimestamp()
-{
+void getTimestamp(char[] *stamp){
     long            ms; // Milliseconds
     time_t          s;  // Seconds
     struct timespec spec;
@@ -30,9 +29,7 @@ char[] getTimestamp()
         s++;
         ms = 0;
     }
-    char[13] stamp;
     snprintf(stamp, 13, "%"PRIdMAX"%03ld", (intmax_t)s, ms);
-    return stamp;
 }
 
 struct BUTTON_DATA {
@@ -45,7 +42,8 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
 	if(level == 1 && data->lastEvent + INTERVAL < tick ){
 	    data->lastEvent = tick;
   	    printf("Button Pressed\n");
-  	    char[13] stamp = getTimestamp();
+  	    char[13] stamp;
+  	    getTimestamp(stamp);
   	    printf("Current time: %s\n", stamp);
 	}
 }
