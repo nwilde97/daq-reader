@@ -35,6 +35,7 @@ void getTimestampStr(char *stamp){
 
 struct BUTTON_DATA {
 	uint32_t lastEvent;
+	unsigned short pressed;
 };
 
 static void _cb(int gpio, int level, uint32_t tick, void *user){
@@ -46,13 +47,11 @@ static void _cb(int gpio, int level, uint32_t tick, void *user){
   	    char stamp[14];
   	    getTimestampStr(stamp);
   	    printf("Current time: %s\n", stamp);
+  	    data->pressed = 1;
 	}
 }
 
-int setupButtonListener( ) {
-    struct BUTTON_DATA *data;
-    data = malloc(sizeof(data));
-    data->lastEvent = 0;
+int setupButtonListener( struct BUTTON_DATA *data ) {
 	if (gpioInitialise() < 0){
 	    printf("Unable to initialize button");
 	     return 1;
@@ -75,6 +74,7 @@ unsigned long setupDAQ() {
     unsigned long deviceFound = 0;
     ADConfigBlock configBlock = {0};
     char *calibration_type;
+
     /*
      * MUST call AIOUSB_Init() before any meaningful AIOUSB functions;
      * AIOUSB_GetVersion() above is an exception
@@ -157,7 +157,7 @@ void getTimestamp(){
 }
 
 int main( int argc, char **argv ) {
-    setupButtonListener();
+
 	unsigned long deviceIndex = setupDAQ();
 
 	/*
@@ -169,6 +169,11 @@ int main( int argc, char **argv ) {
 	int scansWritten = 0; /* Used to track how many scans have been written to a file */
 	FILE *fp; /* File pointer to write to */
 	char filename[32]; /* Placeholder for filename */
+	struct BUTTON_DATA *data;
+	data = malloc(sizeof(data));
+	data->lastEvent = 0;
+	data->pressed = 0;
+	setupButtonListener(data);
 	/* End Initialization */
 
 	/* Begin scanning loop */
@@ -181,11 +186,15 @@ int main( int argc, char **argv ) {
         }
         result = ADC_GetScan( deviceIndex, volts );
         if( result == AIOUSB_SUCCESS ) {
+
             char stamp[15];
             getTimestampStr(stamp);
             fwrite(stamp , 1, 14, fp);
+            fwrite(&data->pressed , 2, 1, fp);
             fwrite(&volts, 2, NUM_CHANNELS, fp);
             ++scansWritten;
+            // Reset Button
+            data->pressed = 0;
 //                for( int channel = 0; channel < NUM_CHANNELS; channel++ ){
 //                    printf( "%u,", volts[ channel ] );
 //                }
