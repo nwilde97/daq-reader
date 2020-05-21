@@ -4,36 +4,65 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <pigpio.h>
+#include <stdlib.h>
+#include <inttypes.h>
+#include <math.h>
 
-//using namespace AIOUSB;
+static const int MAX_CHANNELS = 128;
+static const int NUM_CHANNELS = 64;
+static const int HERTZ = 100;
+static const int SECONDS_PER_FILE = 10;
+static const uint32_t INTERVAL = 500000; /* Half second timeout for button events*/
 
-int msleep(long msec)
-{
-    struct timespec ts;
-    int res;
 
-    if (msec < 0)
-    {
-        errno = EINVAL;
-        return -1;
+void getTimestampStr(char *stamp){
+    long            ms; // Milliseconds
+    time_t          s;  // Seconds
+    struct timespec spec;
+
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+    s  = spec.tv_sec;
+    ms = round(spec.tv_nsec / 1.0e6); // Convert nanoseconds to milliseconds
+    if (ms > 999) {
+        s++;
+        ms = 0;
     }
-
-    ts.tv_sec = msec / 1000;
-    ts.tv_nsec = (msec % 1000) * 1000000;
-
-    do {
-        res = nanosleep(&ts, &ts);
-    } while (res && errno == EINTR);
-
-    return res;
+    snprintf(stamp, 14, "%"PRIdMAX"%09ld", (intmax_t)s, spec.tv_nsec);
+//    printf("%04ld %"PRIdMAX"%09ld\n", spec.tv_nsec, (intmax_t)s, spec.tv_nsec);
 }
 
-int main( int argc, char **argv ) {
-    int CAL_CHANNEL = 5;
-    int MAX_CHANNELS = 128;
-    int NUM_CHANNELS = 64;
-    unsigned short counts[ MAX_CHANNELS ];
-    unsigned short volts[ MAX_CHANNELS ];
+struct BUTTON_DATA {
+	uint32_t lastEvent;
+	unsigned short pressed;
+};
+
+static void _cb(int gpio, int level, uint32_t tick, void *user){
+    struct BUTTON_DATA *data;
+    data = user;
+	if(level == 1 && data->lastEvent + INTERVAL < tick ){
+	    data->lastEvent = tick;
+  	    printf("Button Pressed\n");
+  	    char stamp[14];
+  	    getTimestampStr(stamp);
+  	    printf("Current time: %s\n", stamp);
+  	    data->pressed = 1;
+	}
+}
+
+int setupButtonListener( struct BUTTON_DATA *data ) {
+	if (gpioInitialise() < 0){
+	    printf("Unable to initialize button");
+	     return 1;
+	}
+	gpioSetMode(4, PI_INPUT);
+	gpioSetWatchdog(4, 100);
+  gpioSetAlertFuncEx(4, _cb, data);
+}
+
+unsigned long setupDAQ() {
+
     unsigned char gainCodes[ NUM_CHANNELS ];
     uint64_t serialNumber;
     unsigned long result;
@@ -45,17 +74,6 @@ int main( int argc, char **argv ) {
     unsigned long deviceFound = 0;
     ADConfigBlock configBlock = {0};
     char *calibration_type;
-    time_t start;
-    int hertz;
-    int frequency;
-
-    printf("USB-AI16-16A sample program version %s, %s\n"
-           "  This program demonstrates controlling a USB-AI16-16A device on\n"
-           "  the USB bus. For simplicity, it uses the first such device found\n"
-           "  on the bus.\n",
-           AIOUSB_GetVersion(),
-           AIOUSB_GetVersionDate()
-           );
 
     /*
      * MUST call AIOUSB_Init() before any meaningful AIOUSB functions;
@@ -64,20 +82,18 @@ int main( int argc, char **argv ) {
     result = AIOUSB_Init();
     if ( result != AIOUSB_SUCCESS ) {
         printf( "AIOUSB_Init() error: %d\n" , (int)result);
-        goto out_main;
+        return -1;
     }
 
     deviceMask = GetDevices(); /** call GetDevices() to obtain "list" of devices found on the bus */
     if ( !deviceMask  ) {
         printf( "No ACCES devices found on USB bus\n" );
-        goto out_after_init;
+        return -1;
     }
 
     /*
      * at least one ACCES device detected, but we want one of a specific type
      */
-    AIOUSB_ListDevices(); /** print list of all devices found on the bus */
-
     while( deviceMask != 0 ) {
         if( ( deviceMask & 1 ) != 0 ) {
             // found a device, but is it the correct type?
@@ -100,54 +116,14 @@ int main( int argc, char **argv ) {
 
     if (deviceFound < 1 ) {
         printf( "Failed to find USB-AI16-16A device\n" );
-        goto out_after_init;
+        return -1;
     }
 
     AIOUSB_Reset( deviceIndex );
-    result = GetDeviceSerialNumber( deviceIndex, &serialNumber );
 
-    if( result == AIOUSB_SUCCESS )
-        printf( "Serial number of device at index %llx\n", (long long)serialNumber  );
-    else
-        printf( "Error '%s' getting serial number of device at index %lu\n",
-                AIOUSB_GetResultCodeAsString( result ),
-                deviceIndex );
-
-    /*
-     * demonstrate A/D configuration; there are two ways to configure the A/D;
-     * one way is to create an ADConfigBlock instance and configure it, and then
-     * send the whole thing to the device using ADC_SetConfig(); the other way
-     * is to use the discrete API functions such as ADC_SetScanLimits(), which
-     * send the new settings to the device immediately; here we demonstrate the
-     * ADConfigBlock technique; below we demonstrate use of the discrete functions
-     */
-    AIOUSB_InitConfigBlock( &configBlock, deviceIndex, AIOUSB_FALSE );
-
-    AIOUSB_SetAllGainCodeAndDiffMode( &configBlock, AD_GAIN_CODE_10V, AIOUSB_FALSE );
-    ADCConfigBlockSetCalMode( &configBlock, AD_CAL_MODE_NORMAL );
-    ADCConfigBlockSetTriggerMode( &configBlock, 0 );
-    AIOUSB_SetScanRange( &configBlock, 0, 63 );
-    ADCConfigBlockSetOversample( &configBlock, 0 );
-
-    // memset(configBlock.registers,0,20 );
-    // configBlock.registers[0x11] = 0x04;
-    // configBlock.registers[0x12] = 0xf0;
-    // configBlock.registers[0x13] = 0x0e;
-
-    result = ADC_SetConfig( deviceIndex, configBlock.registers, &configBlock.size );
-
-    if ( result != AIOUSB_SUCCESS ) {
-        printf( "Error '%s' setting A/D configuration\n",
-                AIOUSB_GetResultCodeAsString( result )
-                );
-        goto out_after_init;
-    }
-    printf( "A/D settings successfully configured\n" );
-
-    // calibration_type = strdup(":1TO1:");
+    /** automatic A/D calibration */
     calibration_type = strdup(":AUTO:");
-
-    result = ADC_SetCal( deviceIndex, calibration_type ); /**demonstrate automatic A/D calibration */
+    result = ADC_SetCal( deviceIndex, calibration_type );
 
     if( result == AIOUSB_SUCCESS ) {
         printf( "Automatic calibration completed successfully\n" );
@@ -155,89 +131,97 @@ int main( int argc, char **argv ) {
         printf ("Automatic calibration not supported on this device\n");
     } else {
         printf( "Error '%s' performing automatic A/D calibration\n", AIOUSB_GetResultCodeAsString( result ) );
-        goto out_after_init;
+        return -1;
     }
 
     /*
-     * verify that A/D ground calibration is correct
-     */
-    ADC_SetOversample( deviceIndex, 0 );
-    ADC_SetScanLimits( deviceIndex, CAL_CHANNEL, CAL_CHANNEL );
-    ADC_ADMode( deviceIndex, 0 , AD_CAL_MODE_GROUND );
-
-    // result = ADC_GetScan( deviceIndex, counts );
-
-    // if( result == AIOUSB_SUCCESS )
-    //     printf( "Ground counts = %u (should be approx. 0)\n", counts[ CAL_CHANNEL ] );
-    // else
-    //     printf( "Error '%s' attempting to read ground counts\n",
-    //             AIOUSB_GetResultCodeAsString( result ) );
-
-
-
-
-    /*
-     * verify that A/D reference calibration is correct
-     */
-    // ADC_ADMode( deviceIndex, 0 , AD_CAL_MODE_REFERENCE );
-    // result = ADC_GetScan( deviceIndex, counts );
-    // if( result == AIOUSB_SUCCESS )
-    //     printf( "Reference counts = %u (should be approx. 65130)\n", counts[ CAL_CHANNEL ] );
-    // else
-    //     printf( "Error '%s' attempting to read reference counts\n",
-    //             AIOUSB_GetResultCodeAsString( result ) );
-    /*
-     * demonstrate scanning channels and measuring voltages
+     * Scan channels and measure voltages
      */
     for( int channel = 0; channel < NUM_CHANNELS; channel++ ){
         gainCodes[ channel ] = AD_GAIN_CODE_0_10V;
     }
-
-
     ADC_RangeAll( deviceIndex, gainCodes, AIOUSB_TRUE );
     ADC_SetOversample( deviceIndex, 10 );
     ADC_SetScanLimits( deviceIndex, 0, NUM_CHANNELS - 1 );
     ADC_ADMode( deviceIndex, 0 /* TriggerMode */, AD_CAL_MODE_NORMAL );
+    return deviceIndex;
+}
 
-    start = time(NULL);
-    hertz = 100;
-    frequency = 1000 * 1 / hertz;
-//    for(;time(NULL) < start + 10;){
-    for(int i = 0;; ++i){
-        char filename[32];
-        int byteCount = 0;
-        snprintf(filename, 32, "/home/pi/ggc/in/%d.dat", i);
-        printf("\nWriting to file %s", filename);
-        FILE *fp = fopen(filename, "w");
-        for(int j = 0; j < hertz * 10; ++j){
-            result = ADC_GetScan( deviceIndex, volts );
-            if( result == AIOUSB_SUCCESS ) {
+void getTimestamp(){
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    //do stuff
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+
+    uint64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+}
+
+int main( int argc, char **argv ) {
+
+	unsigned long deviceIndex = setupDAQ();
+
+	/*
+	* Initialize variables used in scan loop
+	*/
+    unsigned short volts[ MAX_CHANNELS ];
+    unsigned long result;
+	int fileIdx = 0; /* Index to be used in filenames */
+	int scansWritten = 0; /* Used to track how many scans have been written to a file */
+	FILE *fp; /* File pointer to write to */
+	char filename[32]; /* Placeholder for filename */
+	struct BUTTON_DATA *data;
+	data = malloc(sizeof(data));
+	data->lastEvent = 0;
+	data->pressed = 0;
+	setupButtonListener(data);
+	/* End Initialization */
+
+	/* Begin scanning loop */
+	while(1){
+        if(scansWritten == 0){
+            // Open a new file
+            snprintf(filename, 32, "/home/pi/ggc/in/%d.dat", fileIdx);
+            printf("Writing to file %s\n", filename);
+            fp = fopen(filename, "w");
+        }
+        result = ADC_GetScan( deviceIndex, volts );
+        if( result == AIOUSB_SUCCESS ) {
+
+            char stamp[15];
+            getTimestampStr(stamp);
+            fwrite(stamp , 1, 14, fp);
+            fwrite(&data->pressed , 2, 1, fp);
+            fwrite(&volts, 2, NUM_CHANNELS, fp);
+            ++scansWritten;
+            // Reset Button
+            data->pressed = 0;
 //                for( int channel = 0; channel < NUM_CHANNELS; channel++ ){
 //                    printf( "%u,", volts[ channel ] );
 //                }
-                fwrite(&volts, 2, NUM_CHANNELS, fp);
-                byteCount += 2 * NUM_CHANNELS;
 //                printf("\n");
-            } else {
-                printf( "Error '%s' performing A/D channel scan\n", AIOUSB_GetResultCodeAsString( result ) );
-            }
-            msleep(frequency);
+        } else {
+            printf( "Error '%s' performing A/D channel scan\n", AIOUSB_GetResultCodeAsString( result ) );
         }
-        printf("\nWrote %d bytes to file %s", byteCount, filename);
-        fclose(fp);
+
+        /*
+        * If we've reached the capacity for the file, then close it
+        */
+        if(scansWritten >= HERTZ * SECONDS_PER_FILE){
+            scansWritten = 0;
+            ++fileIdx;
+            fclose(fp);
+        }
+
+		/*
+		* Wait a certain amount of time defined by HERTZ
+		*/
+//        int APPROXIMATE_SCRIPT_TIME = 300;
+//        int SLEEP_TIME = 1000000 * 1 / HERTZ - APPROXIMATE_SCRIPT_TIME;
+        int SLEEP_TIME = 7000; /* This is approximate but results in about 100 hertz */
+		gpioDelay(SLEEP_TIME);
     }
 
-    /*
-     * demonstrate reading a single channel in volts
-     */
-//    result = ADC_GetChannel( deviceIndex, CAL_CHANNEL, &volts[ CAL_CHANNEL ] );
-//    if( result == AIOUSB_SUCCESS )
-//        printf( "Volts read from A/D channel %d = %f\n", CAL_CHANNEL, volts[ CAL_CHANNEL ] );
-//    else
-//        printf( "Error '%s' reading A/D channel %d\n",
-//                AIOUSB_GetResultCodeAsString( result ),
-//                CAL_CHANNEL );
-
+    /* End Scanning loop */
 
 /*
  * MUST call AIOUSB_Exit() before program exits,
@@ -247,6 +231,5 @@ int main( int argc, char **argv ) {
     AIOUSB_Exit();
 
  out_main:
-
     return ( int ) result;
 }

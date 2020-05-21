@@ -18,6 +18,12 @@ RUN cd /AIOUSB/AIOUSB && \
 
 ENV CPATH=/usr/include/libusb-1.0/:/usr/local/include/aiousb
 
+RUN cd / &&\
+	git clone https://github.com/joan2937/pigpio.git && \
+	cd pigpio && \
+    make && \
+    make install
+
 WORKDIR /root/work
 
 

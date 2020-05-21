@@ -11,7 +11,6 @@ This project contains code to read from an ACCESIO DAQ Reader at a rate of 100 h
 ## Building compiled code
 ```
 docker build --tag daq-reader .
-docker run 
-docker run -it -v $(pwd):/root/work daq-reader:1.0 gcc -std=gnu99 -D_GNU_SOURCE -pthread -fPIC main.c -laiousb -lusb-1.0 -lm -o main
+docker run -it -v $(pwd):/root/work daq-reader:latest gcc -std=gnu99 -D_GNU_SOURCE -pthread -fPIC main.c -laiousb -lusb-1.0 -lm -o main
 ```
 
