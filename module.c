@@ -86,7 +86,7 @@ unsigned long setupDAQ() {
     return deviceIndex;
 }
 
-napi_value shutdown(napi_env env, napi_callback_info info) {
+napi_value shutdownDAQ(napi_env env, napi_callback_info info) {
 	printf( "Shutting down DAQ\n");
 	AIOUSB_Exit();
 	printf( "Exiting\n");
@@ -125,8 +125,8 @@ napi_value Init(napi_env env, napi_value exports) {
     napi_create_function(env, NULL, 0, setupDAQWrapper, NULL, &fn);
     napi_set_named_property(env, exports, "setupDAQ", fn);
 
-    napi_create_function(env, NULL, 0, shutdown, NULL, &fn);
-    napi_set_named_property(env, exports, "shutdown", fn);
+    napi_create_function(env, NULL, 0, shutdownDAQ, NULL, &fn);
+    napi_set_named_property(env, exports, "shutdownDAQ", fn);
 
     napi_create_function(env, NULL, 0, scanChannels, NULL, &fn);
     napi_set_named_property(env, exports, "scanChannels", fn);
