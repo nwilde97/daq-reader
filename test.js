@@ -1,4 +1,6 @@
 
 const addon = require('./build/Release/module');
-console.log(`Setup DAQ`, addon.setupDAQ());
-// console.log(`Shutdown`, addon.shutdown());
+let index = addon.setupDAQ();
+console.log(`Setup DAQ`, index);
+console.log("Scan", addon.scanChannels(index))
+console.log(`Shutdown`, addon.shutdown());

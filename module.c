@@ -1,8 +1,9 @@
 #include <node_api.h>
 #include <aiousb.h>
 
+int NUM_CHANNELS = 64;
+
 unsigned long setupDAQ() {
-	int NUM_CHANNELS = 64;
     unsigned char gainCodes[ NUM_CHANNELS ];
     unsigned long result;
     unsigned long deviceMask;
@@ -96,6 +97,24 @@ napi_value setupDAQWrapper(napi_env env, napi_callback_info info){
 	return result;
 }
 
+napi_value scanChannels(napi_env, napi_callback_info info){
+	double volts[ NUM_CHANNELS ];
+	unsigned long deviceIndex;
+	napi_get_value_uint32(env, argv[0], &deviceIndex);
+	printf( "Querying Channels for device %lu\n",number);
+	ADC_GetScan( deviceIndex, volts );
+	napi_value result;
+	napi_create_array(env, &result);
+
+	napi_value num_result;
+	for (int i = 0; i < NUM_CHANNELS; ++i) {
+		napi_create_double(env, volts[i], &num_result);
+		napi_set_element(env, result, i, num_result);
+	}
+
+	return result;
+}
+
 napi_value Init(napi_env env, napi_value exports) {
     napi_value fn;
     napi_create_function(env, NULL, 0, setupDAQWrapper, NULL, &fn);
@@ -103,6 +122,9 @@ napi_value Init(napi_env env, napi_value exports) {
 
     napi_create_function(env, NULL, 0, shutdown, NULL, &fn);
     napi_set_named_property(env, exports, "shutdown", fn);
+
+    napi_create_function(env, NULL, 0, scanChannels, NULL, &fn);
+    napi_set_named_property(env, exports, "scanChannels", fn);
   	return exports;
 }
 
