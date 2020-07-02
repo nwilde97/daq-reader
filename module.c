@@ -87,8 +87,10 @@ unsigned long setupDAQ() {
 }
 
 napi_value shutdown(napi_env env, napi_callback_info info) {
-  AIOUSB_Exit();
-  return NULL;
+	printf( "Shutting down DAQ\n");
+	AIOUSB_Exit();
+	printf( "Exiting\n");
+	return NULL;
 }
 
 napi_value setupDAQWrapper(napi_env env, napi_callback_info info){
