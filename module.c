@@ -97,12 +97,15 @@ napi_value setupDAQWrapper(napi_env env, napi_callback_info info){
 	return result;
 }
 
-napi_value scanChannels(napi_env, napi_callback_info info){
+napi_value scanChannels(napi_env env, napi_callback_info info){
 	double volts[ NUM_CHANNELS ];
-	unsigned long deviceIndex;
+	unsigned int deviceIndex;
+	size_t argc = 1;
+	napi_value argv[1];
+	napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
 	napi_get_value_uint32(env, argv[0], &deviceIndex);
-	printf( "Querying Channels for device %lu\n",number);
-	ADC_GetScan( deviceIndex, volts );
+	printf( "Querying Channels for device %u\n",deviceIndex);
+	ADC_GetScanV( deviceIndex, volts );
 	napi_value result;
 	napi_create_array(env, &result);
 
