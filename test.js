@@ -12,11 +12,11 @@ process.on('exit', (code) => {
         console.time("loop");
         const LOOP = setInterval(() => {
             daq.scanChannels(DEVICE_INDEX)
-            if(++i > 100){
+            if(++i > 1000/24){
                 clearInterval(LOOP);
                 console.timeEnd("loop");
             }
-        }, 10);
+        }, 1000/24);
     }
 })();
 
