@@ -28,7 +28,7 @@ process.on('exit', (code) => {
         const LOOP = setInterval(() => {
             const voltages = daq.scanChannels(DEVICE_INDEX);
             io.emit("scan", {voltages, timestamp: Date.now()});
-        }, 3);
+        }, 50);
     }
     // setInterval(() => {
     //     const voltages = [];
