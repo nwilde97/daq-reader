@@ -9,7 +9,6 @@
   },
   "author": "",
   "license": "ISC",
-  "gypfile": true,
   "homepage": "https://github.com/nwilde97/daq-reader#readme",
   "dependencies": {
     "express": "^4.17.1",
