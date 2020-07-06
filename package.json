@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "This project contains code to read from an ACCESIO DAQ Reader at a rate of 100 hertz and log the data to .dat files in 10 second chunks. Building the code produces the executable that can be run",
   "main": "test.js",
-  "scripts": {
-    "install": "node-gyp rebuild",
-    "build": "node-gyp rebuild"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nwilde97/daq-reader.git"
