@@ -1,6 +1,6 @@
 "use strict";
 const open = require("open");
-const daq = require('./build/Release/module');
+const daq = require('../build/Release/module');
 process.on('exit', (code) => {
     console.log(`Shutting down DAQ`, daq.shutdownDAQ());
 });
