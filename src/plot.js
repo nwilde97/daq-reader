@@ -8,11 +8,10 @@ process.on('exit', (code) => {
     console.log("Done", code);
 });
 (async () => {
-
-    const CHANNEL = parseInt(process.argv[3])-1;
-    if(CHANNEL < 1 || CHANNEL > 64){
-        console.log(`Invalid channel ${process.argv[3]}`);
-        exit(1);
+    const CHANNEL = parseInt(process.argv[2])-1;
+    if(CHANNEL < 0 || CHANNEL > 63){
+        console.log(`Invalid channel ${process.argv[2]}`);
+        process.exit(1);
     }
 
     let data = [];
@@ -24,6 +23,7 @@ process.on('exit', (code) => {
     plot.set("yrange [0:20]");
     plot.println(`plot "data.out" using 1:2 with lines`);
     plot.println(`bind "q" "unset output ; exit gnuplot"`);
+    console.log("DAQ is sending data, press Q to terminate program");
 
     //Setup DAQ Listener
     const DEVICE_INDEX = daq.setupDAQ();
@@ -33,13 +33,18 @@ process.on('exit', (code) => {
     } else {
         let i = 0;
         const LOOP = setInterval(async () => {
-            const voltages = daq.scanChannels(DEVICE_INDEX);
+            try {
+const voltages = daq.scanChannels(DEVICE_INDEX);
             const x = voltages[CHANNEL];
             data = data.slice(1);
             data.push(x);
             const out = data.map((val, idx) => `${idx}\t${val}`).join(EOL);
             await fs.writeFile("data.out", out);
+console.log(x);
             plot.println("replot");
+} catch(e){
+  process.exit(1);
+}
         }, 50);
     }
 })().catch(err => console.log(err));
